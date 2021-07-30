@@ -17,13 +17,15 @@ class TestPrincipalAxis(unittest.TestCase):
 
         # Create 2 Factor Data
         cov_matrix = np.cov(data)
-        loadings, _, _ = pca(cov_matrix, 2)
+        loadings, eigenvalues, _ = pca(cov_matrix, 2)
 
         # Add Unique variance
         cov_matrix2 = loadings @ loadings.T + np.diag(unique_var)
 
-        loadings_paf, _, variance = paf(cov_matrix2, 2)
+        loadings_paf, eigenvalues2, variance = paf(cov_matrix2, 2)
+
         np.testing.assert_allclose(loadings, loadings_paf, rtol=1e-4)
+        np.testing.assert_allclose(eigenvalues, eigenvalues2, rtol=1e-4)
         np.testing.assert_allclose(unique_var, variance, rtol=1e-4)
 
 
