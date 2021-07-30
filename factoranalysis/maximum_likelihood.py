@@ -3,16 +3,7 @@ import numpy as np
 from RyStats.factoranalysis import principal_components_analysis as pca
 
 
-__all__ = ["maximum_likelihood_factor_analysis", "maximum_likelihood_factor_analysis_em",
-           "maximum_likelihood_statistics"]
-
-
-def maximum_likelihood_statistics(loadings, unique_variance, original_matrix):
-    """Computes the statistics associated with maximum likelihood factor analysis.
-    
-    
-    """
-    pass
+__all__ = ["maximum_likelihood_factor_analysis", "maximum_likelihood_factor_analysis_em"]
 
 
 def maximum_likelihood_factor_analysis(input_matrix, n_factors, tolerance=1e-7,

@@ -10,6 +10,9 @@ from scipy.special import erfinv
 from scipy.stats import mvn
 
 
+__all__ = ["contingency_table", "polychoric_matrix_parallel"]
+
+
 def validate_contigency_table(the_table):
     """Checks tables for columns or rows with all zeros and deletes.
 

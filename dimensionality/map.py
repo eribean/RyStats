@@ -1,18 +1,24 @@
 import numpy as np
 
+from RyStats.common import polychoric
+from RyStats.factoranalysis import principal_components_analysis as pca
+
+
+__all__ = ["minimum_average_partial"]
+
 
 def _get_correlation_method(correlation):
     if correlation[0].lower() == 'pearsons':
         func = np.corrcoef
     elif correlation[0].lower() == 'polychoric':
-        func = partial(polychoric_matrix, start_val=correlation[1], stop_val=correlation[2])
+        func = partial(polychoric.polychoric_matrix, start_val=correlation[1], stop_val=correlation[2])
     else:
         raise ValueError('Unknown correlation method {}'.format(correlation[0]))
         
     return func
 
 
-def dimensionality_map(the_data, correlation=('pearsons', )):
+def minimum_average_partial(the_data, correlation=('pearsons', )):
     """ Determines dimensionality based on the matrix of partial correlations.
 
     Args:

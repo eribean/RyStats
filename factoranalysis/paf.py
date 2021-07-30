@@ -2,7 +2,7 @@ import numpy as np
 
 from scipy.optimize import fixed_point
 
-from RyStats import principal_components_analysis as pca
+from RyStats.factoranalysis import principal_components_analysis as pca
 
 
 __all__ = ['principal_axis_factor']

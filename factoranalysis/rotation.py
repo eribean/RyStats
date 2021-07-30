@@ -5,7 +5,7 @@ from scipy.optimize import basinhopping
 from RyStats.common import hyperspherical_vector, entropy
 
 
-__all__ = ['sparsify_loadings', 'procrustes_rotation']
+__all__ = ['sparsify_loadings']
 
 
 def sparsify_loadings(loadings, initial_guess=None, alpha=0.5,

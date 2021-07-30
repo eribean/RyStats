@@ -1,6 +1,9 @@
 import numpy as np
 
 
+__all__ = ["entropy"]
+
+
 def entropy(the_array, axis=1):
     """Computes a modified entropy value for each row
 

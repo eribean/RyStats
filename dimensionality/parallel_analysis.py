@@ -4,8 +4,12 @@ from functools import partial
 
 import numpy as np
 
+from RyStats.common.polychoric import polychoric_matrix
 from RyStats.factoranalysis import principal_component_analysis as pca
 from RyStats.factoranalysis import principal_axis_factor as paf
+
+
+__all__ = ["parallel_analysis_from_data"]
 
 
 def _get_extraction_function(method):
