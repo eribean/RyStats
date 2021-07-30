@@ -10,7 +10,7 @@ class TestMinimumRank(unittest.TestCase):
     """Test fixture for minimum rank."""
 
     def test_minimum_rank_recovery(self):
-        """Testing Principle Axis Factor."""
+        """Testing Minimum Rank Recovery."""
         rng = np.random.default_rng(2016)
 
         data = rng.uniform(-2, 2, size=(10, 100))
@@ -33,7 +33,7 @@ class TestMinimumRank(unittest.TestCase):
         np.testing.assert_allclose(unique_var, variance, rtol=1e-3)
 
     def test_minimum_zero_eigenvalue(self):
-        """Testing Principle Axis Factor."""
+        """Testing Forced Semi-Positive Definite."""
         rng = np.random.default_rng(12473)
 
         data = rng.uniform(-2, 2, size=(10, 100))
