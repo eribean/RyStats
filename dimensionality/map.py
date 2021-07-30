@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 
 from RyStats.common import polychoric
