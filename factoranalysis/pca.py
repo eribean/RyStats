@@ -4,7 +4,7 @@ import numpy as np
 __all__ = ['principal_components_analysis']
 
 
-def principal_components_analysis(input_matrix, n_factors):
+def principal_components_analysis(input_matrix, n_factors=None):
     """Performs principal components analysis.
 
     Args:
@@ -17,16 +17,15 @@ def principal_components_analysis(input_matrix, n_factors):
         unique_variance: vector of all zeros
     """
     if n_factors is None:
-        n_factors = input_matrix.shape(0)
+        n_factors = input_matrix.shape[0]
 
-    # Symmetric Matrices have an svd equal to np.linalg.eigh
-    uu, sv, _ = np.linalg.svd(input_matrix, hermitian=True)
+    eigenvalues, loadings = np.linalg.eigh(input_matrix,)
 
     # Only return the requested factors
-    eigenvalues = sv[:n_factors]
-    loadings = uu[:, :n_factors]
+    eigenvalues = eigenvalues[-n_factors:][::-1]
+    loadings = loadings[:, -n_factors:][:, ::-1]
 
     # Scale Loadings
-    loadings /= np.sqrt(eigenvalues)
+    loadings *= np.sqrt(eigenvalues).reshape(1, -1)
 
-    return loadings, eigenvalues, np.zeros((input_matrix.shape(0)))
+    return loadings, eigenvalues, np.zeros((input_matrix.shape[0]))

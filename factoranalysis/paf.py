@@ -11,7 +11,7 @@ __all__ = ['principal_axis_factor']
 def _paf_fixed_point_iterate(unique_variance, input_matrix, n_factors):
     """Principal axis factor iteration function."""
     adjusted_matrix = input_matrix - np.diag(unique_variance)
-    facts = pca(adjusted_matrix, n_factors)
+    facts, _, _ = pca(adjusted_matrix, n_factors)
     return np.diag(input_matrix - facts @ facts.T)
 
 
@@ -38,5 +38,8 @@ def principal_axis_factor(input_matrix, n_factors, initial_guess=None,
     unique_variance = fixed_point(_paf_fixed_point_iterate, initial_guess,
                                   args=args, xtol=tolerance, maxiter=max_iterations)
 
-    return (pca(input_matrix - np.diag(unique_variance), n_factors)[:2] +
-            (unique_variance))
+    loadings, eigenvalues, _ = pca(input_matrix - np.diag(unique_variance), 
+                                   n_factors)
+    
+    return loadings, eigenvalues, unique_variance
+

@@ -10,7 +10,7 @@ from RyStats.factoranalysis import principal_axis_factor as paf
 from RyStats.common import hyperspherical_angles, hyperspherical_vector
 
 
-ZERO_TOL = -1e-6;
+ZERO_TOL = -1e-6
 
 
 __all__ = ['minimum_rank_factor_analysis']
