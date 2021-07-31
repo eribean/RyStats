@@ -4,7 +4,7 @@ from functools import partial
 
 import numpy as np
 
-from RyStats.common.polychoric import polychoric_matrix
+from RyStats.common.polychoric import polychoric_correlation
 from RyStats.factoranalysis import principal_components_analysis as pca
 from RyStats.factoranalysis import principal_axis_factor as paf
 

@@ -12,11 +12,13 @@ def entropy(the_array, axis=1):
         axis: Axis to perform calculation on
                 0: Vertical
                 1: Horizontal
-                None: Both axes
     Return:
         entropy value
     """
     power = the_array * the_array
     sum_power = power.sum(axis=axis)
-    power /= sum_power[:, None]
+    if axis:
+        power /= sum_power.reshape(-1, 1)
+    else:
+        power /= sum_power
     return -(power * np.log(power + 1e-23)).sum()

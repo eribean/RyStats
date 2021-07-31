@@ -5,6 +5,17 @@ A collection of statistical functions writtten in python
 ```
 pip install . -t $PYTHONPATH --upgrade
 ```
+## Unittests
+
+**Without** coverage.py module
+```
+nosetests testing/
+```
+
+**With** coverage.py module
+```
+nosetests --with-coverage --cover-package=RyStats.factoranalysis
+```
 
 ## Contact
 
