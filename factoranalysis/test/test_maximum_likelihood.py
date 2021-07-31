@@ -64,7 +64,6 @@ class TestMaximumLikelihood(unittest.TestCase):
         rotation = procrustes_rotation(loadings_modern, loadings_classic2)
         updated_loadings2 = loadings_classic2 @ rotation        
 
-        # No starting Location
         np.testing.assert_allclose(loadings_modern, updated_loadings, rtol=1e-3)
         np.testing.assert_allclose(loadings_modern, updated_loadings2, rtol=1e-3)
         np.testing.assert_allclose(variance_modern, variance_classic, rtol=1e-4)

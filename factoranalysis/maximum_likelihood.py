@@ -40,42 +40,45 @@ def maximum_likelihood_factor_analysis(input_matrix, n_factors, tolerance=1e-7,
     
     identity_items = np.eye(n_items)
 
-    A_tilde = np.diag(1 / np.sqrt(uvars)) @ loads
+    loads_tilde = np.diag(1 / np.sqrt(uvars)) @ loads
 
     for iteration in range(max_iter):
         previous_unique_variance = uvars.copy()
         
         # Solve for Updated Loadings
         psi_sqrt = 1 / np.sqrt(uvars)
-        S_tilde = np.diag(psi_sqrt) @ input_matrix @ np.diag(psi_sqrt)
+        input_tilde = np.diag(psi_sqrt) @ input_matrix @ np.diag(psi_sqrt)
 
-        u1, s1, _ = np.linalg.svd(S_tilde, hermitian=True)
-        nk = np.linalg.cholesky(S_tilde).T.copy()
+        s1, u1 = np.linalg.eigh(input_tilde)  
+        valid_eigs = s1[-n_factors:]
+        valid_vects = u1[:, -n_factors:]
+
+        lower_chol = np.linalg.cholesky(input_tilde).T.copy()
         
-        A_update = u1[:, :n_factors] @ np.diag(np.sqrt(s1[:n_factors] - 1))
-        
-        inv_B = u1[:, :n_factors] @ ( np.diag( 1 / s1[:n_factors] - 1)) @ u1[:, :n_factors].T + identity_items
-        
+        loads_update = valid_vects @ np.diag(np.sqrt(valid_eigs - 1))
+
         # Solve for Updated Unique Variance
+        inv_B = (valid_vects @ np.diag(1 / valid_eigs - 1)
+                 @ valid_vects.T + identity_items)
+
         for ndx in range(n_items):
-            jj = inv_B[0, ndx]
-            D = nk @ inv_B[0]
-            D = D.dot(D)
-            omega = (D - jj) / jj**2
+            scalar = inv_B[0, ndx]
+            selected_row = lower_chol @ inv_B[0]
+            selected_row = selected_row.dot(selected_row)
+            omega = (selected_row - scalar) / scalar**2
             uvars[ndx] = max(1e-6, (omega + 1) * uvars[ndx])
-            k = inv_B[0, ndx+1:] * (-omega / (1 + omega * jj))
             
-            z = k.reshape(-1, 1) * inv_B[0]
-                                    
-            inv_B = inv_B[1:, :] + z
+            # Recursively update Inverse of B
+            selected_column = inv_B[0, ndx+1:] * (-omega / (1 + omega * scalar))
+            adjustment = selected_column.reshape(-1, 1) * inv_B[0]
+            inv_B = inv_B[1:, :] + adjustment
 
+        loads_tilde = loads_update.copy()
 
-        A_tilde = A_update.copy()
         if np.abs(previous_unique_variance - uvars).max() < tolerance:
             break
-            
-    update_loads = A_tilde * np.sqrt(uvars)[:, None]
-    
+
+    update_loads = loads_tilde * np.sqrt(uvars)[:, None]    
     return update_loads, np.square(update_loads).sum(0), uvars
 
 
@@ -119,23 +122,26 @@ def maximum_likelihood_factor_analysis_em(input_matrix, n_factors, tolerance=1e-
     for iteration in range(max_iter):
         # Reduced Matrix
         sigma_reduced = loads @ loads.T + np.diag(uvars)
-        u, s, v = np.linalg.svd(sigma_reduced, hermitian=True)
-        u /= s
-        inv_sigma = u @ v
+        s, u = np.linalg.eigh(sigma_reduced)
+        inv_sigma = u.copy()
+        inv_sigma /= s
+        inv_sigma = inv_sigma @ u.T
 
-        # Update Equations
+        # Update Loadings
         loads_update = input_matrix.copy()
         loads_update /= uvars
         loads_update = loads_update @ loads
         temp_matrix = identity + loads.T @ inv_sigma @ loads_update
         loads_update = loads_update @ np.linalg.inv(temp_matrix)
 
+        # Update Unique Variance
         uvars_update = np.diag(input_matrix - input_matrix 
                                @ inv_sigma @ (loads @ loads_update.T))
 
         # For tolerance assessment
         delta = np.max(np.abs(uvars - uvars_update))
 
+        # Copy for next iteration
         loads = loads_update.copy()
         uvars = uvars_update.copy()
 
