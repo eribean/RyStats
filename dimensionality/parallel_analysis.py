@@ -1,21 +1,16 @@
+from multiprocessing import shared_memory
+from multiprocessing.managers import SharedMemoryManager
 from concurrent import futures
 from itertools import repeat, starmap
 from functools import partial
 
 import numpy as np
 
-from RyStats.common.polychoric import polychoric_correlation
+from RyStats.common.polychoric import polychoric_correlation_serial
 from RyStats.factoranalysis import principal_components_analysis as pca
-from RyStats.factoranalysis import principal_axis_factor as paf
 
 
-__all__ = ["parallel_analysis_from_data"]
-
-
-def _get_extraction_function(method):
-    """Returns the appropriate parallel analysis method."""
-    return {'pca': pca,
-            'paf': partial(paf, n_factors=1, force_spd=False)}[method]
+__all__ = ["parallel_analysis"]
 
 
 def _get_correlation_function(method):
@@ -23,69 +18,57 @@ def _get_correlation_function(method):
     if method[0] == 'pearsons':
         func = np.corrcoef
     elif method[0] == 'polychoric':
-        func = partial(polychoric_matrix, start_val=method[1], stop_val=method[2])
+        func = partial(polychoric_correlation_serial, start_val=method[1], stop_val=method[2])
     else:
         raise ValueError('Unknown correlation method {}'.format(method[0]))
 
     return func
 
 
-def _parallel_engine(random_matrix, correlation_method, extraction_method):
-    """Runs the parallel analysis."""
-    corr_matrix = correlation_method(random_matrix)
-
-    try:
-        results = extraction_method(corr_matrix)
-    except (RuntimeError, ValueError):
-        return np.full(corr_matrix.shape[0], np.nan)
-
-    unique_variance = results[-1]
-
-    # PCA doesn't return a variance vector
-    if len(results) == 2:
-        unique_variance *= 0.0
-
-    return np.linalg.eigvalsh(corr_matrix - np.diag(unique_variance))
-
-
-def parallel_analysis(n_items, n_observations, n_iterations=1000,
-                      method='pca', rseed=None, num_processors=1,
-                      _return_raw=False):
-    """Creates eigenvalues for factor retention thresholding.
+def parallel_analysis_serial(raw_data, n_iterations, correlation=('pearsons',), seed=None):
+    """Estimate dimensionality from random data permutations.
 
     Args:
-        n_items:  Number of items in data matrix
-        n_observations:  Number of observations in data matrix
+        raw_data:  [n_items x n_observations] Raw collected data
         n_iterations:  Number of iterations to run
-        method: Method to extract factors {'pca', 'paf', 'pafspd', 'mrfa'}
-        rseed:  (integer) Random number generator seed value
-        num_processors:  Number of processors to use, default is 1
+        correlation: Method to construct correlation matrix either:
+                        ('pearsons',) for continuous data
+                        ('polychoric', min_val, max_val) for ordinal data
+                        min_val and max_val are the range for the ordinal data
+        seed:  (integer) Random number generator seed value
 
     Returns
-        tuple of:
-            eigs: median eigenvalues
-            sigma: standard deviation of eigenvalues
-            invalid: number of invalid entries found
+        eigs: mean eigenvalues
+        sigma: standard deviation of eigenvalues
     """
-    if rseed is not None:
-        np.random.seed(rseed)
+    rng = np.random.default_rng(seed)
 
-    extraction_method = _get_extraction_function(method)
-    correlation_method = np.corrcoef
+    # Get Seeds for repeatablity
+    random_seeds = rng.choice(100*n_iterations, n_iterations, replace=False)
 
-    random_matrices = starmap(np.random.randn,
-                              repeat((n_items, n_observations), n_iterations))
+    n_items = raw_data.shape[0]
+    raw_data = raw_data.reshape(1, -1)
 
-    args = (_parallel_engine, random_matrices, repeat(correlation_method),
-            repeat(extraction_method))
+    correlation_method = _get_correlation_function(correlation)
 
-    return _parallel_analysis_abstract(args, num_processors, n_iterations,
-                                       method, _return_raw)
+    eigenvalue_array = np.zeros((n_iterations, n_items))
+
+    for ndx, rseed in enumerate(random_seeds):
+        rng_local = np.random.default_rng(rseed)
+
+        new_data = rng_local.permutation(raw_data, axis=1).reshape(n_items, -1)
+        local_correlation = correlation_method(new_data)
+
+        _, eigenvalues, _ = pca(local_correlation)
+
+        eigenvalue_array[ndx] = eigenvalues
+    
+    return eigenvalue_array.mean(0), eigenvalue_array.std(0, ddof=1)
 
 
-def parallel_analysis_from_data(the_data, n_iterations=1000, method='pca',
-                                correlation=('pearsons',), rseed=None,
-                                num_processors=1, _return_raw=False):
+def parallel_analysis(the_data, n_iterations=1000, method='pca',
+                      correlation=('pearsons',), rseed=None,
+                      num_processors=1, _return_raw=False):
     """Creates eigenvalues for factor retention from data.
 
     The input data is permuted n_iteration times to obtain the diversity.

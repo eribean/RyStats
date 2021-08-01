@@ -1,7 +1,7 @@
 # RyStats
 A collection of statistical packages writtten in python.
 
-## Factor Analsyis
+## Factor Analysis
 Several factor analysis routines are implemented includind
 
 1. Principal Components Analysis
