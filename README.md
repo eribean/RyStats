@@ -1,5 +1,14 @@
 # RyStats
-A collection of statistical functions writtten in python
+A collection of statistical packages writtten in python.
+
+## Factor Analsyis
+Several factor analysis routines are implemented includind
+
+1. Principal Components Analysis
+2. Principal Axis Factoring
+3. Maximum Likelihood
+4. Minimum Rank
+
 
 # Installation
 ```
@@ -9,12 +18,12 @@ pip install . -t $PYTHONPATH --upgrade
 
 **Without** coverage.py module
 ```
-nosetests testing/
+nosetests 
 ```
 
 **With** coverage.py module
 ```
-nosetests --with-coverage --cover-package=RyStats.factoranalysis
+nosetests --with-coverage --cover-package=RyStats
 ```
 
 ## Contact
