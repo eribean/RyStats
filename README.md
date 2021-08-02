@@ -9,6 +9,17 @@ Several factor analysis routines are implemented includind
 3. Maximum Likelihood
 4. Minimum Rank
 
+### Rotation
+1. Orthogonal / Oblique
+2. Procrustes
+
+### Dimensionality Assessment
+ 1. Parallel Analysis
+ 2. MAP (Minimum Average Partial)
+
+### Misc.
+1. Polychoric Correlations
+
 
 # Installation
 ```
