@@ -65,7 +65,8 @@ def parallel_analysis_serial(raw_data, n_iterations, correlation=('pearsons',), 
     return eigenvalue_array.mean(0), eigenvalue_array.std(0, ddof=1)
 
 
-def parallel_analysis(raw_data, n_iterations, correlation=('pearsons',), seed=None, num_processors=2):
+def parallel_analysis(raw_data, n_iterations, correlation=('pearsons',), 
+                      seed=None, num_processors=2):
     """Estimate dimensionality from random data permutations.
 
     Args:
@@ -99,7 +100,7 @@ def parallel_analysis(raw_data, n_iterations, correlation=('pearsons',), seed=No
                                  dtype=raw_data.dtype, buffer=shm.buf)
         shared_buff[:] = raw_data[:]
 
-        with futures.ProcessPoolExecutor(max_workers=num_processors) as pool:
+        with futures.ThreadPoolExecutor(max_workers=num_processors) as pool:
             results = pool.map(_pa_engine, repeat(shm.name), repeat(correlation),
                                repeat(n_items), repeat(raw_data.dtype), 
                                repeat(raw_data.shape), chunk_seeds)
