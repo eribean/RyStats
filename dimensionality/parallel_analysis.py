@@ -9,10 +9,9 @@ import numpy as np
 from numpy.random import SeedSequence
 
 from RyStats.common.polychoric import polychoric_correlation_serial
-from RyStats.factoranalysis import principal_components_analysis as pca
 
 
-__all__ = ["parallel_analysis"]
+__all__ = ["parallel_analysis", "parallel_analysis_serial"]
 
 
 def _get_correlation_function(method):
@@ -58,9 +57,9 @@ def parallel_analysis_serial(raw_data, n_iterations, correlation=('pearsons',), 
         new_data = rng_local.permutation(raw_data, axis=1).reshape(n_items, -1)
         local_correlation = correlation_method(new_data)
 
-        _, eigenvalues, _ = pca(local_correlation)
+        eigenvals = np.linalg.eigvalsh(local_correlation)[::-1]
 
-        eigenvalue_array[ndx] = eigenvalues
+        eigenvalue_array[ndx] = eigenvals
     
     return eigenvalue_array.mean(0), eigenvalue_array.std(0, ddof=1)
 
@@ -127,8 +126,8 @@ def _pa_engine(name, correlation, n_items, dtype, shape, subset):
 
         local_correlation = correlation_method(new_data)
 
-        _, eigenvalues, _ = pca(local_correlation)
+        eigenvals = np.linalg.eigvalsh(local_correlation)[::-1]
 
-        eigenvalue_array[ndx] = eigenvalues       
+        eigenvalue_array[ndx] = eigenvals       
         
     return eigenvalue_array    
