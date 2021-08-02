@@ -1,10 +1,12 @@
 from multiprocessing import shared_memory
 from multiprocessing.managers import SharedMemoryManager
 from concurrent import futures
+
 from itertools import repeat, starmap
 from functools import partial
 
 import numpy as np
+from numpy.random import SeedSequence
 
 from RyStats.common.polychoric import polychoric_correlation_serial
 from RyStats.factoranalysis import principal_components_analysis as pca
@@ -24,7 +26,6 @@ def _get_correlation_function(method):
 
     return func
 
-
 def parallel_analysis_serial(raw_data, n_iterations, correlation=('pearsons',), seed=None):
     """Estimate dimensionality from random data permutations.
 
@@ -41,10 +42,8 @@ def parallel_analysis_serial(raw_data, n_iterations, correlation=('pearsons',), 
         eigs: mean eigenvalues
         sigma: standard deviation of eigenvalues
     """
-    rng = np.random.default_rng(seed)
-
     # Get Seeds for repeatablity
-    random_seeds = rng.choice(100*n_iterations, n_iterations, replace=False)
+    random_seeds = SeedSequence(seed).spawn(n_iterations)
 
     n_items = raw_data.shape[0]
     raw_data = raw_data.reshape(1, -1)
@@ -66,77 +65,69 @@ def parallel_analysis_serial(raw_data, n_iterations, correlation=('pearsons',), 
     return eigenvalue_array.mean(0), eigenvalue_array.std(0, ddof=1)
 
 
-def parallel_analysis(the_data, n_iterations=1000, method='pca',
-                      correlation=('pearsons',), rseed=None,
-                      num_processors=1, _return_raw=False):
-    """Creates eigenvalues for factor retention from data.
-
-    The input data is permuted n_iteration times to obtain the diversity.
+def parallel_analysis(raw_data, n_iterations, correlation=('pearsons',), seed=None, num_processors=2):
+    """Estimate dimensionality from random data permutations.
 
     Args:
-        the_data:  Input array with the_data.shape == (n_items, n_observations)
+        raw_data:  [n_items x n_observations] Raw collected data
         n_iterations:  Number of iterations to run
-        method: Method to extract factors {'pca', 'paf', 'pafspd', 'mrfa'}
-        rseed:  (integer) Random number generator seed value
-        num_processors:  Number of processors to use, default is 1
         correlation: Method to construct correlation matrix either:
                         ('pearsons',) for continuous data
                         ('polychoric', min_val, max_val) for ordinal data
                         min_val and max_val are the range for the ordinal data
+        seed:  (integer) Random number generator seed value
+        num_processors: number of processors on a multi-core cpu to use
+
     Returns
-        tuple of:
-            eigs: median eigenvalues
-            sigma: standard deviation of eigenvalues
-            invalid: number of invalid entries found
+        eigs: mean eigenvalues
+        sigma: standard deviation of eigenvalues
     """
-    if rseed is not None:
-        np.random.seed(rseed)
-
-    extraction_method = _get_extraction_function(method)
-    correlation_method = _get_correlation_function(correlation)
-
-    random_matrices = map(np.apply_along_axis, repeat(np.random.permutation),
-                          repeat(1), repeat(the_data, n_iterations))
-
-    args = (_parallel_engine, random_matrices, repeat(correlation_method),
-            repeat(extraction_method))
-    return _parallel_analysis_abstract(args, num_processors, n_iterations,
-                                       method, _return_raw)
-
-
-def _parallel_analysis_abstract(args, num_processors, n_iterations, method,
-                                _return_raw):
-    """Common Function to run parallel analysis data."""
     if num_processors == 1:
-        eigs = map(*args)
-    else:
+        return parallel_analysis_serial(raw_data, n_iterations, correlation, seed)
+    
+    # Get Seeds for repeatablity
+    random_seeds = SeedSequence(seed).spawn(n_iterations)
+    chunk_seeds = np.array_split(random_seeds, num_processors)
+
+    n_items = raw_data.shape[0]
+    raw_data = raw_data.reshape(1, -1)
+    
+    # Do the parallel calculation
+    with SharedMemoryManager() as smm:
+        shm = smm.SharedMemory(size=raw_data.nbytes)
+        shared_buff = np.ndarray(raw_data.shape, 
+                                 dtype=raw_data.dtype, buffer=shm.buf)
+        shared_buff[:] = raw_data[:]
+
         with futures.ProcessPoolExecutor(max_workers=num_processors) as pool:
-            eigs = pool.map(*args,
-                            chunksize=int(n_iterations / 2 / num_processors))
+            results = pool.map(_pa_engine, repeat(shm.name), repeat(correlation),
+                               repeat(n_items), repeat(raw_data.dtype), 
+                               repeat(raw_data.shape), chunk_seeds)
 
-    eigen_list = list(eigs)
+    eigenvalue_array = np.concatenate(list(results), axis=0)
 
-    # To support distributed computing
-    if _return_raw:
-        return eigen_list
+    return eigenvalue_array.mean(0), eigenvalue_array.std(0, ddof=1)
 
-    eigenvalues = np.array(eigen_list)
-    mask = np.isnan(eigenvalues[:, 0])
-    eigenvalues = eigenvalues[~mask, :]
 
-    # The median is more robust to outliers, and represents the 50th percentile
-    median_eigenvalues = np.median(eigenvalues, axis=0)
-    std_eigenvalues = eigenvalues.std(axis=0)
+def _pa_engine(name, correlation, n_items, dtype, shape, subset):
+    """Parallel analysis engine for distributed computing."""
+    correlation_method = _get_correlation_function(correlation)
+    eigenvalue_array = np.zeros((subset.shape[0], n_items))
+    
+    # Read the shared memory buffer
+    existing_shm = shared_memory.SharedMemory(name=name)    
+    raw_data = np.ndarray(shape, dtype=dtype, 
+                          buffer=existing_shm.buf)
 
-    # Adjust for 1-factor methods
-    if method != 'pca':
-        last_column = eigenvalues[:, -1]
-        std_guess = np.median(std_eigenvalues) + std_eigenvalues[1:-1].std() * 9
-        median_value = np.median(last_column)
-        upper = median_value + std_guess
-        lower = median_value - std_guess
+    for ndx, rseed in enumerate(subset):
+        rng_local = np.random.default_rng(rseed)
 
-        mask = (last_column >= lower) & (last_column <= upper)
-        std_eigenvalues[-1] = last_column[mask].std()
+        new_data = rng_local.permutation(raw_data, axis=1).reshape(n_items, -1)
 
-    return median_eigenvalues[::-1], std_eigenvalues[::-1], mask.sum()
+        local_correlation = correlation_method(new_data)
+
+        _, eigenvalues, _ = pca(local_correlation)
+
+        eigenvalue_array[ndx] = eigenvalues       
+        
+    return eigenvalue_array    
