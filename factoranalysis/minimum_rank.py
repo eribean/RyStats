@@ -1,16 +1,9 @@
-import copy
-
 import numpy as np
 from numpy.linalg import svd
 from scipy.optimize import minimize
-from scipy.linalg import eigvalsh, eigvals
 
 from RyStats.factoranalysis import principal_components_analysis as pca
 from RyStats.factoranalysis import principal_axis_factor as paf
-from RyStats.common import hyperspherical_angles, hyperspherical_vector
-
-
-ZERO_TOL = -1e-6
 
 
 __all__ = ['minimum_rank_factor_analysis']
@@ -24,7 +17,7 @@ def _mrfa_min_func(inverse_half_variance, correlation_cholesky, n_factors):
     
 
 def minimum_rank_factor_analysis(correlation_matrix, n_factors,
-                                 initial_guess=None,n_iter=500):
+                                 initial_guess=None, n_iter=500):
     """Performs minimum rank factor analysis on a correlation matrix.
 
     This method constrains the search region to force the resulting matrix to
@@ -35,6 +28,7 @@ def minimum_rank_factor_analysis(correlation_matrix, n_factors,
         n_factors:  number of factors to keep
         initial_guess: Guess to seed the search algorithm, defaults to
                        the result of principal axis factor
+        n_iter: Maximum number of iterations to run (Default: 500)
 
     Returns:
         loadings: extracted factor loadings
