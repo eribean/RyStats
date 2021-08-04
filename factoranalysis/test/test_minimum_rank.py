@@ -11,9 +11,9 @@ class TestMinimumRank(unittest.TestCase):
 
     def test_minimum_rank_recovery(self):
         """Testing Minimum Rank Recovery."""
-        rng = np.random.default_rng(2016)
+        rng = np.random.default_rng(5487341)
 
-        data = rng.uniform(-2, 2, size=(10, 100))
+        data = rng.uniform(-2, 2, size=(10, 200))
         unique_var = rng.uniform(0.2, .5, size=10)
 
         # Create 3 Factor Data
@@ -23,12 +23,12 @@ class TestMinimumRank(unittest.TestCase):
         # Add Unique variance
         cor_matrix2 = loadings @ loadings.T + np.diag(unique_var)
 
-        initial_guess = np.ones((10,)) *.5
-        loadings_paf, eigenvalues2, variance = mrfa(cor_matrix2, 3, 
+        initial_guess = np.ones((10,)) * 2
+        loadings_paf, eigenvalues2, variance = mrfa(cor_matrix2, 3, n_iter=5000,
                                                     initial_guess=initial_guess)
 
         # Did I Recover initial values?
-        np.testing.assert_allclose(loadings, loadings_paf, rtol=1e-3)
+        np.testing.assert_allclose(loadings, -loadings_paf, rtol=1e-3)
         np.testing.assert_allclose(eigenvalues, eigenvalues2, rtol=1e-3)
         np.testing.assert_allclose(unique_var, variance, rtol=1e-3)
 
@@ -43,10 +43,10 @@ class TestMinimumRank(unittest.TestCase):
 
         _, _, variance = mrfa(cor_matrix, 3)
 
-        _, eigens, _ = pca(cor_matrix - np.diag(variance))
+        eigens = np.linalg.eigvalsh(cor_matrix - np.diag(variance))
         
         # Is the last eigenvalue zero?
-        self.assertAlmostEqual(eigens[-1], 0, places=5)
+        self.assertAlmostEqual(eigens[0], 0, places=5)
 
 
 if __name__ == "__main__":
