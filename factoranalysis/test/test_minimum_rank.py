@@ -1,9 +1,11 @@
 import unittest
 
 import numpy as np
+from scipy.optimize import minimize
 
 from RyStats.factoranalysis import principal_components_analysis as pca
 from RyStats.factoranalysis import minimum_rank_factor_analysis as mrfa
+from RyStats.factoranalysis.minimum_rank import _mrfa_min_func
 
 
 class TestMinimumRank(unittest.TestCase):
@@ -31,6 +33,42 @@ class TestMinimumRank(unittest.TestCase):
         np.testing.assert_allclose(loadings, -loadings_paf, rtol=1e-3)
         np.testing.assert_allclose(eigenvalues, eigenvalues2, rtol=1e-3)
         np.testing.assert_allclose(unique_var, variance, rtol=1e-3)
+
+    def test_minimum_rank_derivative(self):
+        """Testing the derivative calculation in minimum rank."""
+        def no_derivative(inverse_half_variance, correlation_cholesky, n_factors):
+            return _mrfa_min_func(inverse_half_variance, 
+                                  correlation_cholesky, 
+                                  n_factors)[0]
+
+        rng = np.random.default_rng(216857371353)
+        data = rng.uniform(-2, 2, size=(10, 200))
+
+        # Create Data
+        cor_matrix = np.corrcoef(data)
+        cholesky_corr = np.linalg.cholesky(cor_matrix)
+
+        initial_guess = rng.uniform(.1, .9, 10)
+        initial_guess = 1 / np.sqrt(initial_guess)
+        bounds = [(1, 100)] * 10
+
+        # Compare numerical to analytical derivatives
+        for n_factors in range(1, 5):
+            result = minimize(no_derivative, 
+                              initial_guess, 
+                              args=(cholesky_corr, n_factors),
+                              method='SLSQP',
+                              bounds=bounds,
+                              options={'maxiter': 1})
+
+            derivative_calc = _mrfa_min_func(initial_guess, 
+                                             cholesky_corr, 
+                                             n_factors)
+            np.testing.assert_allclose(result['jac'], derivative_calc[1], atol=1e-5)
+
+
+
+
 
     def test_minimum_zero_eigenvalue(self):
         """Testing Forced Semi-Positive Definite."""
