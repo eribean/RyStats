@@ -5,7 +5,7 @@
 A collection of statistical packages writtten in python.
 
 ## Factor Analysis
-Several factor analysis routines are implemented includind
+Several factor analysis routines are implemented including:
 
 1. Principal Components Analysis
 2. Principal Axis Factoring
