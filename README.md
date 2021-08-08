@@ -1,3 +1,4 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 # RyStats
 A collection of statistical packages writtten in python.
 
@@ -26,6 +27,11 @@ Several factor analysis routines are implemented includind
 pip install . -t $PYTHONPATH --upgrade
 ```
 ## Unittests
+
+**Pytest with coverage**
+```
+pytest --cov=RyStats --cov-report term
+```
 
 **Without** coverage.py module
 ```
