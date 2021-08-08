@@ -1,7 +1,10 @@
 [![RyStats Actions Status](https://github.com/eribean/RyStats/workflows/RyStats/badge.svg)](https://github.com/eribean/RyStats/actions)
 [![codecov.io](https://codecov.io/gh/eribean/RyStats/coverage.svg?branch=main)](https://codecov.io/gh/eribean/RyStats)
 [![CodeFactor](https://www.codefactor.io/repository/github/eribean/RyStats/badge)](https://www.codefactor.io/repository/github/eribean/RyStats)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI version](https://badge.fury.io/py/RyStats.svg)](https://badge.fury.io/py/RyStats)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
+
 # RyStats
 A collection of statistical packages writtten in python.
 
