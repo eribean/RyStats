@@ -10,12 +10,13 @@ if __name__ == '__main__':
     setup(
         name="RyStats", 
         packages=['RyStats.factoranalysis', 'RyStats.dimensionality',
-                  'RyStats.common'],
-        package_dir={'RyStats.common':convert_path('./common'),
-                     'RyStats.factoranalysis':convert_path('./factoranalysis'),
-                     'RyStats.dimensionality':convert_path('./dimensionality')
+                  'RyStats.common', 'RyStats.plots'],
+        package_dir={'RyStats.common': convert_path('./common'),
+                     'RyStats.factoranalysis': convert_path('./factoranalysis'),
+                     'RyStats.dimensionality': convert_path('./dimensionality'),
+                     'RyStats.plots': convert_path('./plots')
                      },
-        version="0.1.0",
+        version="0.1.5",
         license="MIT",
         description="Psychology Related Statistics in Python!",
         long_description=long_description.replace('<ins>','').replace('</ins>',''),

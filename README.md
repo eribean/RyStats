@@ -34,17 +34,12 @@ pip install . -t $PYTHONPATH --upgrade
 ```
 ## Unittests
 
-**Pytest with coverage**
+**Pytest** with coverage
 ```
 pytest --cov=RyStats --cov-report term
 ```
 
-**Without** coverage.py module
-```
-nosetests 
-```
-
-**With** coverage.py module
+**Nosetest** with coverage
 ```
 nosetests --with-coverage --cover-package=RyStats
 ```
