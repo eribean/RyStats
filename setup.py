@@ -25,7 +25,7 @@ if __name__ == '__main__':
         author_email='ryan.sanchez@gofactr.com',
         url = 'https://github.com/eribean/RyStats',
         keywords = ['Psychology', 'Psychometrics', 'FactorAnalysis'],
-        install_requires = ['numpy', 'scipy'],
+        install_requires = ['numpy', 'scipy', 'bokeh', 'ipython'],
         classifiers = [
             'Development Status :: 3 - Alpha',
             'Intended Audience :: Science/Research',
