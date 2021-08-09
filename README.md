@@ -32,6 +32,15 @@ Several factor analysis routines are implemented including:
 2. Scipy
 3. Bokeh (for plotting)
 
+# Plotting Tools
+Plotting Tools require Bokeh and are made to be used within a Jupyter Notebook
+
+### Plot Functions
+1. correlation_image: creates a heatmap of a correlation matrix
+2. loading_image: creates a heatmap of a loadings matrix
+3. scree_plot: plots the eigenvalues for dimensionality assessment
+4. loading_table: creates a table that displays the loadings matrix
+
 # Installation
 ```
 pip install . -t $PYTHONPATH --upgrade
