@@ -27,11 +27,17 @@ Several factor analysis routines are implemented including:
 ### Misc.
 1. Polychoric Correlations
 
+# Dependencies
+1. Numpy
+2. Scipy
+3. Bokeh (for plotting)
 
 # Installation
 ```
 pip install . -t $PYTHONPATH --upgrade
 ```
+
+
 ## Unittests
 
 **Pytest** with coverage
