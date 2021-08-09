@@ -27,24 +27,34 @@ Several factor analysis routines are implemented including:
 ### Misc.
 1. Polychoric Correlations
 
+# Dependencies
+1. Numpy
+2. Scipy
+3. Bokeh (for plotting)
+
+# Plotting Tools
+Plotting Tools require Bokeh and are made to be used within a Jupyter Notebook
+
+### Plot Functions
+1. correlation_image: creates a heatmap of a correlation matrix
+2. loading_image: creates a heatmap of a loadings matrix
+3. scree_plot: plots the eigenvalues for dimensionality assessment
+4. loading_table: creates a table that displays the loadings matrix
 
 # Installation
 ```
 pip install . -t $PYTHONPATH --upgrade
 ```
+
+
 ## Unittests
 
-**Pytest with coverage**
+**Pytest** with coverage
 ```
 pytest --cov=RyStats --cov-report term
 ```
 
-**Without** coverage.py module
-```
-nosetests 
-```
-
-**With** coverage.py module
+**Nosetest** with coverage
 ```
 nosetests --with-coverage --cover-package=RyStats
 ```
