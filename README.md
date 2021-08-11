@@ -27,11 +27,6 @@ Several factor analysis routines are implemented including:
 ### Misc.
 1. Polychoric Correlations
 
-# Dependencies
-1. Numpy
-2. Scipy
-3. Bokeh (for plotting)
-
 # Plotting Tools
 Plotting Tools require Bokeh and are made to be used within a Jupyter Notebook
 
@@ -41,11 +36,15 @@ Plotting Tools require Bokeh and are made to be used within a Jupyter Notebook
 3. scree_plot: plots the eigenvalues for dimensionality assessment
 4. loading_table: creates a table that displays the loadings matrix
 
+# Dependencies
+1. Numpy
+2. Scipy
+3. Bokeh (for plotting)
+
 # Installation
 ```
 pip install . -t $PYTHONPATH --upgrade
 ```
-
 
 ## Unittests
 
