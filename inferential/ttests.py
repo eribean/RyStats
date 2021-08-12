@@ -15,13 +15,40 @@ def _mean_std_size_for_group(dataset):
     return the_mean, the_std, the_size
 
 
-def one_sample_ttest(group1, mean, one_tailed=False):
+def _p_value_and_confidence_intervals(t_value, deg_of_freedom, tailed):
+    """Returns the p_value and confidence intervals scalars."""
+
+    if tailed.lower() == 'left':
+        p_value = sp.t.sf(t_value, deg_of_freedom)
+        confidence_interval_scalar = sp.t.isf(0.05, deg_of_freedom)
+        confidence_interval = np.array([-np.inf, confidence_interval_scalar])
+
+    elif tailed.lower() == 'right':
+        p_value = 1 - sp.t.sf(t_value, deg_of_freedom)
+        confidence_interval_scalar = sp.t.isf(0.05, deg_of_freedom)
+        confidence_interval = np.array([-confidence_interval_scalar, np.inf])
+
+    elif tailed.lower() == 'two':
+        p_value = sp.t.sf(np.abs(t_value), deg_of_freedom) * 2
+        confidence_interval_scalar = sp.t.isf(0.025, deg_of_freedom)
+        confidence_interval = np.array([-confidence_interval_scalar, 
+                                        confidence_interval_scalar])
+
+    else:
+        raise ValueError(f"Invalid tailed option {tailed}, choose "
+                          "between 'left', 'right' or 'two")
+
+    return p_value, confidence_interval
+
+
+def one_sample_ttest(group1, mean, tailed="Two"):
     """Computes a ttest hypothesis for one sample.
 
     Args:
         group1:  Sample group
         mean: the hypothetical mean of the population
-        one_tailed: (Boolean) Use a 1 tailed t-test
+        tailed: (String) [('Two') | 'Left' | 'Right] Defines two-tailed or 
+                left/right one tailed t-test                    
 
     Returns:
         tests_structure: structure with ttest 
@@ -36,21 +63,22 @@ def one_sample_ttest(group1, mean, one_tailed=False):
     t_metric = cohen_d * np.sqrt(valid_size)
 
     # Inference
-    scalar = [2, 1][one_tailed]
-    p_value = sp.t.sf(np.abs(t_metric), deg_of_freedom) * scalar
-    ci_scalar = sp.t.isf(0.05 / scalar, deg_of_freedom) * std1 / np.sqrt(valid_size)
+    p_value, ci_scalar = _p_value_and_confidence_intervals(t_metric, deg_of_freedom, tailed)
+    ci_scalar *= std1 / np.sqrt(valid_size)
+
     cohen_d = (mean1 - mean) / std1
+    confidence_interval = mean1 + ci_scalar
 
     output = {'Mean1': mean1, 'Std1': std1, 'n1': valid_size,
               'Mean2': mean, 'Std2': 0, 'n2': 1,
-              'T_value': t_metric, 'P_value': p_value, 'scalar': ci_scalar,
+              'T_value': t_metric, 'P_value': p_value, '95th CI': confidence_interval,
               'Cohen_d': cohen_d,
               'df': deg_of_freedom}
 
     return output
 
 
-def equal_variance_ttest(group1, group2, one_tailed=False):
+def equal_variance_ttest(group1, group2, tailed="Two"):
     """Computes the t-test for two groups.
 
     assumes equal_variance between the groups
@@ -58,7 +86,8 @@ def equal_variance_ttest(group1, group2, one_tailed=False):
     Args:
         group1:  First group for comparison
         group2:  Second group for comparison
-        one_tailed: (Boolean) Use a 1 tailed t-test
+        tailed: (String) [('Two') | 'Left' | 'Right] Defines two-tailed or 
+                left/right one tailed t-test
 
     Returns:
         structure of ttest values
@@ -76,20 +105,20 @@ def equal_variance_ttest(group1, group2, one_tailed=False):
     t_metric = (mean1 - mean2) / standard_error
 
     # Inference
-    scalar = [2, 1][one_tailed]
-    p_value = sp.t.sf(np.abs(t_metric), deg_of_freedom) * scalar
-    ci_scalar = sp.t.isf(0.05 / scalar, deg_of_freedom) * standard_error
+    p_value, ci_scalar = _p_value_and_confidence_intervals(t_metric, deg_of_freedom, tailed)
+    ci_scalar *= standard_error
     cohen_d = (mean1 - mean2) / np.sqrt(pooled_var)
+    confidence_interval = (mean1 - mean2) + ci_scalar
 
     output = {'Mean1': mean1, 'Std1': std1, 'n1': valid_size1,
               'Mean2': mean2, 'Std2': std2, 'n2': valid_size2,
-              'T_value': t_metric, 'P_value': p_value, 'scalar': ci_scalar,
+              'T_value': t_metric, 'P_value': p_value, '95th CI': confidence_interval,
               'Cohen_d': cohen_d, 'df': deg_of_freedom}
 
     return output
 
 
-def unequal_variance_ttest(group1, group2, one_tailed=False):
+def unequal_variance_ttest(group1, group2, tailed="Two"):
     """Computes the t-test for two groups
 
     Doesn't assume two groups have equal variance. Uses
@@ -98,7 +127,8 @@ def unequal_variance_ttest(group1, group2, one_tailed=False):
     Args:
         group1:  First group for comparison
         group2:  Second group for comparison
-        one_tailed: (Boolean) Use a 1 tailed t-test
+        tailed: (String) [('Two') | 'Left' | 'Right] Defines two-tailed or 
+                left/right one tailed t-test
 
     Returns:
         structure of ttest values
@@ -118,20 +148,20 @@ def unequal_variance_ttest(group1, group2, one_tailed=False):
     t_metric = (mean1 - mean2) / np.sqrt(weighted_variance)
 
     # Inference
-    scalar = [2, 1][one_tailed]
-    p_value = sp.t.sf(np.abs(t_metric), deg_of_freedom) * scalar
-    ci_scalar = sp.t.isf(0.05 / scalar, deg_of_freedom) * np.sqrt(weighted_variance)
+    p_value, ci_scalar = _p_value_and_confidence_intervals(t_metric, deg_of_freedom, tailed)
+    ci_scalar *= np.sqrt(weighted_variance)
     cohen_d = (mean1 - mean2) * np.sqrt(2) / np.sqrt(std1**2 + std2**2)
+    confidence_interval = (mean1 - mean2) + ci_scalar
 
     output = {'Mean1': mean1, 'Std1': std1, 'n1': valid_size1,
               'Mean2': mean2, 'Std2': std2, 'n2': valid_size2,
-              'T_value': t_metric, 'P_value': p_value, 'scalar': ci_scalar,
+              'T_value': t_metric, 'P_value': p_value, '95th CI': confidence_interval,
               'Cohen_d': cohen_d, 'df': deg_of_freedom}
 
     return output
 
 
-def repeated_ttest(group1, group2, one_tailed=False):
+def repeated_ttest(group1, group2, tailed="Two"):
     """Computes the t-test for two groups
 
     assumes equal_variance between the groups and repeated measures
@@ -139,7 +169,8 @@ def repeated_ttest(group1, group2, one_tailed=False):
     Args:
         group1:  First group for comparison
         group2:  Second group for comparison
-        one_tailed: (Boolean) Use a 1 tailed t-test
+        tailed: (String) [('Two') | 'Left' | 'Right] Defines two-tailed or 
+                left/right one tailed t-test
 
     Returns:
         structure of ttest values
@@ -158,14 +189,14 @@ def repeated_ttest(group1, group2, one_tailed=False):
     t_metric = mean / standard_error
 
     # Inference
-    scalar = [2, 1][one_tailed]
-    p_value = sp.t.sf(np.abs(t_metric), deg_of_freedom) * scalar
-    ci_scalar = sp.t.isf(0.05 / scalar, deg_of_freedom) * standard_error
+    p_value, ci_scalar = _p_value_and_confidence_intervals(t_metric, deg_of_freedom, tailed)
+    ci_scalar *= standard_error
     cohen_d = mean / std
+    confidence_interval = mean + ci_scalar
 
     output = {'Mean1': mean1, 'Std1': std1, 'n1': valid_size,
               'Mean2': mean2, 'Std2': std2, 'n2': valid_size,
-              'T_value': t_metric, 'P_value': p_value, 'scalar': ci_scalar,
+              'T_value': t_metric, 'P_value': p_value, '95th CI': confidence_interval,
               'Cohen_d': cohen_d, 'df': deg_of_freedom}
 
     return output
