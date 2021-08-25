@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.stats import studentized_range
 
-from RyStats.inferential import (equal_variance_oneway_anova, 
+from RyStats.inferential import (equal_variance_oneway_anova,
+                                 equal_variance_ttest,
                                  unequal_variance_ttest,
                                  repeated_ttest)
 
@@ -19,14 +20,16 @@ def tukey_posthoc(*args):
         groupN:  Input group n as a numpy array
 
     Returns:
-        output matrix with:
-            output[:, :, 0] = pvalues
-            output[:, :, 1] = delta means
-            output[:, :, 2] = lower confidence interval
-            output[:, :, 3] = upper confidence interval
+        P_values: p_value associated with mean difference
+        Delta Means: difference between the means
+        Lower CI : Lower 95th Confidence Interval
+        Upper CI : Upper 95th Confidence Interval
     """
     k_groups = len(args)
-    output = np.zeros((k_groups, k_groups, 4))
+    p_values = np.full((k_groups, k_groups), np.nan)
+    delta_x = p_values.copy()
+    lower_ci = p_values.copy()
+    upper_ci = p_values.copy()
 
     anova_output = equal_variance_oneway_anova(*args)
     ms_error = anova_output['Within']['MS']
@@ -37,23 +40,26 @@ def tukey_posthoc(*args):
             group1 = args[ndx1]
             group2 = args[ndx2]
 
-            std_err1 = ms_error / group1.size
-            std_err2 = ms_error / group2.size
+            std_err1 = ms_error / np.count_nonzero(~np.isnan(group1))
+            std_err2 = ms_error / np.count_nonzero(~np.isnan(group2))
             total_std_error = np.sqrt(0.5 * (std_err1 + std_err2))
 
-            deltaX = group1.mean() - group2.mean()
+            deltaX = np.nanmean(group1) - np.nanmean(group2)
             t_value = deltaX / total_std_error
 
             sigma_value = studentized_range.isf(0.05, 
                                                 k_groups, deg_of_freedom)
             p_value = studentized_range.sf(np.abs(t_value), 
                                            k_groups, deg_of_freedom)
-            output[ndx1, ndx2, 0] = p_value
-            output[ndx1, ndx2, 1] = deltaX
-            output[ndx1, ndx2, 2] = deltaX - sigma_value * total_std_error
-            output[ndx1, ndx2, 3] = deltaX + sigma_value * total_std_error
+            p_values[ndx1, ndx2] = p_value
+            delta_x[ndx1, ndx2] = deltaX
+            lower_ci[ndx1, ndx2] = deltaX - sigma_value * total_std_error
+            upper_ci[ndx1, ndx2] = deltaX + sigma_value * total_std_error
 
-    return output
+    return {'P_value': p_values,
+            'Delta Means': deltaX,
+            'Lower CI': lower_ci,
+            'Upper CI': upper_ci}
 
 
 def games_howell_posthoc(*args):
@@ -65,41 +71,52 @@ def games_howell_posthoc(*args):
         groupN:  Input group n as a numpy array
 
     Returns:
-        output matrix with:
-            output[:, :, 0] = pvalues
-            output[:, :, 1] = delta means
-            output[:, :, 2] = lower confidence interval
-            output[:, :, 3] = upper confidence interval
+        P_values: p_value associated with mean difference
+        Delta Means: difference between the means
+        Lower CI : Lower 95th Confidence Interval
+        Upper CI : Upper 95th Confidence Interval
     """
     k_groups = len(args)
-    output = np.zeros((k_groups, k_groups, 4))
+    p_values = np.full((k_groups, k_groups), np.nan)
+    delta_x = p_values.copy()
+    lower_ci = p_values.copy()
+    upper_ci = p_values.copy()    
 
     for ndx1 in range(k_groups):
         for ndx2 in range(ndx1+1, k_groups):
             group1 = args[ndx1]
             group2 = args[ndx2]
 
-            std_err1 = group1.var(ddof=1) / group1.size
-            std_err2 = group2.var(ddof=1) / group2.size
+            group1_size = np.count_nonzero(~np.isnan(group1))
+            group2_size = np.count_nonzero(~np.isnan(group2))
+
+            std_err1 = np.nanvar(group1, ddof=1) / group1_size
+            std_err2 = np.nanvar(group2, ddof=1) / group2_size
+
             total_std_error = np.sqrt(0.5 * (std_err1 + std_err2))
-            deg_of_freedom = (np.square(std_err1 + std_err2) /
-                              (std_err1**2 / (group1.size - 1) + std_err2**2 / (group2.size - 1)))
-            deltaX = group1.mean() - group2.mean()
+            deg_of_freedom = (np.square(std_err1 + std_err2) 
+                              / (std_err1**2 / (group1_size - 1) 
+                              + std_err2**2 / (group2_size - 1)))
+
+            deltaX = np.nanmean(group1) - np.nanmean(group2)
             t_value = deltaX / total_std_error
 
             sigma_value = studentized_range.isf(0.05, 
                                                 k_groups, deg_of_freedom)
             p_value = studentized_range.sf(np.abs(t_value), 
                                            k_groups, deg_of_freedom)
-            output[ndx1, ndx2, 0] = p_value
-            output[ndx1, ndx2, 1] = deltaX
-            output[ndx1, ndx2, 2] = deltaX - sigma_value * total_std_error
-            output[ndx1, ndx2, 3] = deltaX + sigma_value * total_std_error
+            p_values[ndx1, ndx2] = p_value
+            delta_x[ndx1, ndx2] = deltaX
+            lower_ci[ndx1, ndx2] = deltaX - sigma_value * total_std_error
+            upper_ci[ndx1, ndx2] = deltaX + sigma_value * total_std_error
 
-    return output
+    return {'P_value': p_values,
+            'Delta Means': deltaX,
+            'Lower CI': lower_ci,
+            'Upper CI': upper_ci}
 
 
-def bonferonni_posthoc(*args, repeated=True):
+def bonferonni_posthoc(*args, ttest_type='unequal'):
     """Computes T-Tests between groups, should adjust your
        significance value, a.k.a. bonferonni correction to
        minimize family wide error rates
@@ -108,27 +125,36 @@ def bonferonni_posthoc(*args, repeated=True):
         group1:  Input group 1 as a numpy array
         group2:  Input group 2 as a numpy array
         groupN:  Input group n as a numpy array
-        repeated: Use the repeated measures T-Test
+        ttest_type: [('equal') | 'unequal' | 'repeated'] string
+                    of which type of ttest to perform
 
     Returns:
-        output matrix with:
-            output[:, :, 0] = pvalues
-            output[:, :, 1] = delta means
-            output[:, :, 2] = lower confidence interval
-            output[:, :, 3] = upper confidence interval
+        P_values: p_value associated with mean difference
+        Delta Means: difference between the means
+        Lower CI : Lower 95th Confidence Interval
+        Upper CI : Upper 95th Confidence Interval
     """
     k_groups = len(args)
-    output = np.zeros((k_groups, k_groups, 4))
-    ttest = [unequal_variance_ttest, 
-             repeated_ttest][repeated]
+    ttest = {'equal': equal_variance_ttest,
+             'unequal': unequal_variance_ttest, 
+             'repeated': repeated_ttest}[ttest_type.lower()]
+
+    p_values = np.full((k_groups, k_groups), np.nan)
+    delta_x = p_values.copy()
+    lower_ci = p_values.copy()
+    upper_ci = p_values.copy()
 
     for ndx1 in range(k_groups):
         for ndx2 in range(ndx1+1, k_groups):
             result = ttest(args[ndx1], args[ndx2])
             deltaX = result['Mean1'] - result['Mean2']
-            output[ndx1, ndx2, 0] = result['P_value']
-            output[ndx1, ndx2, 1] = deltaX
-            output[ndx1, ndx2, 2] = deltaX - result['scalar']
-            output[ndx1, ndx2, 3] = deltaX + result['scalar']
 
-    return output
+            delta_x[ndx1, ndx2] = deltaX
+            p_values[ndx1, ndx2] = result['P_value']
+            lower_ci[ndx1, ndx2] = result['95th CI'][0]
+            upper_ci[ndx1, ndx2] = result['95th CI'][1]
+
+    return {'P_value': p_values,
+            'Delta Means': deltaX,
+            'Lower CI': lower_ci,
+            'Upper CI': upper_ci}
