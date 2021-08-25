@@ -26,7 +26,7 @@ def tukey_posthoc(*args):
         Upper CI : Upper 95th Confidence Interval
     """
     k_groups = len(args)
-    p_values = np.full((k_groups, k_groups), np.nan)
+    p_values = np.full((k_groups, k_groups), 0.0)
     delta_x = p_values.copy()
     lower_ci = p_values.copy()
     upper_ci = p_values.copy()
@@ -35,8 +35,11 @@ def tukey_posthoc(*args):
     ms_error = anova_output['Within']['MS']
     deg_of_freedom = anova_output['Within']['DF']
 
-    for ndx1 in range(k_groups):
-        for ndx2 in range(ndx1+1, k_groups):
+    sigma_value = studentized_range.isf(0.05, 
+                                        k_groups, deg_of_freedom)    
+
+    for ndx2 in range(k_groups):
+        for ndx1 in range(ndx2+1, k_groups):
             group1 = args[ndx1]
             group2 = args[ndx2]
 
@@ -47,17 +50,16 @@ def tukey_posthoc(*args):
             deltaX = np.nanmean(group1) - np.nanmean(group2)
             t_value = deltaX / total_std_error
 
-            sigma_value = studentized_range.isf(0.05, 
-                                                k_groups, deg_of_freedom)
             p_value = studentized_range.sf(np.abs(t_value), 
                                            k_groups, deg_of_freedom)
+
             p_values[ndx1, ndx2] = p_value
             delta_x[ndx1, ndx2] = deltaX
             lower_ci[ndx1, ndx2] = deltaX - sigma_value * total_std_error
             upper_ci[ndx1, ndx2] = deltaX + sigma_value * total_std_error
 
     return {'P_value': p_values,
-            'Delta Means': deltaX,
+            'Delta Means': delta_x,
             'Lower CI': lower_ci,
             'Upper CI': upper_ci}
 
@@ -77,13 +79,13 @@ def games_howell_posthoc(*args):
         Upper CI : Upper 95th Confidence Interval
     """
     k_groups = len(args)
-    p_values = np.full((k_groups, k_groups), np.nan)
+    p_values = np.full((k_groups, k_groups), 0.0)
     delta_x = p_values.copy()
     lower_ci = p_values.copy()
     upper_ci = p_values.copy()    
 
-    for ndx1 in range(k_groups):
-        for ndx2 in range(ndx1+1, k_groups):
+    for ndx2 in range(k_groups):
+        for ndx1 in range(ndx2+1, k_groups):
             group1 = args[ndx1]
             group2 = args[ndx2]
 
@@ -111,12 +113,12 @@ def games_howell_posthoc(*args):
             upper_ci[ndx1, ndx2] = deltaX + sigma_value * total_std_error
 
     return {'P_value': p_values,
-            'Delta Means': deltaX,
+            'Delta Means': delta_x,
             'Lower CI': lower_ci,
             'Upper CI': upper_ci}
 
 
-def bonferonni_posthoc(*args, ttest_type='unequal'):
+def bonferonni_posthoc(*args, ttest_type='equal'):
     """Computes T-Tests between groups, should adjust your
        significance value, a.k.a. bonferonni correction to
        minimize family wide error rates
@@ -139,13 +141,13 @@ def bonferonni_posthoc(*args, ttest_type='unequal'):
              'unequal': unequal_variance_ttest, 
              'repeated': repeated_ttest}[ttest_type.lower()]
 
-    p_values = np.full((k_groups, k_groups), np.nan)
+    p_values = np.full((k_groups, k_groups), 0.0)
     delta_x = p_values.copy()
     lower_ci = p_values.copy()
     upper_ci = p_values.copy()
 
-    for ndx1 in range(k_groups):
-        for ndx2 in range(ndx1+1, k_groups):
+    for ndx2 in range(k_groups):
+        for ndx1 in range(ndx2+1, k_groups):
             result = ttest(args[ndx1], args[ndx2])
             deltaX = result['Mean1'] - result['Mean2']
 
@@ -155,6 +157,6 @@ def bonferonni_posthoc(*args, ttest_type='unequal'):
             upper_ci[ndx1, ndx2] = result['95th CI'][1]
 
     return {'P_value': p_values,
-            'Delta Means': deltaX,
+            'Delta Means': delta_x,
             'Lower CI': lower_ci,
             'Upper CI': upper_ci}
