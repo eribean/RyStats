@@ -2,6 +2,7 @@
 [![codecov.io](https://codecov.io/gh/eribean/RyStats/coverage.svg?branch=main)](https://codecov.io/gh/eribean/RyStats)
 [![CodeFactor](https://www.codefactor.io/repository/github/eribean/RyStats/badge)](https://www.codefactor.io/repository/github/eribean/RyStats)
 [![PyPI version](https://badge.fury.io/py/RyStats.svg)](https://badge.fury.io/py/RyStats)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/RyStats?color=darkgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 
@@ -42,6 +43,12 @@ Plotting Tools require Bokeh and are made to be used within a Jupyter Notebook
 3. Bokeh (for plotting)
 
 # Installation
+Via pip
+```
+pip install RyStats --upgrade
+```
+
+From Source
 ```
 pip install . -t $PYTHONPATH --upgrade
 ```
