@@ -180,4 +180,3 @@ def twoway_anova(level1, level2, dependent):
             'weighted_mean': weighted_grand_mean,
             'R2': r_squared,
             'R2_adj': r_squared_adj}
-
