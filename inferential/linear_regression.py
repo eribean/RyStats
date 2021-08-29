@@ -5,131 +5,109 @@ import scipy.stats as sp
 __all__ = ["linear_regression"]
 
 
-def _linear_statistics(independent_vars, dependent_var, beta_coefficients):
-    """Helper function to comput the significance values for the regression."""
-    n_groups = independent_vars.shape[0]
+def _lr_statistics(independent_vars, dependent_var, coefficients):
+    """Computes t-test and confidence intervals for linear regression."""
+    n_groups = independent_vars.shape[0] - 1
     deg_of_freedom = dependent_var.size - n_groups - 1
 
-    # F-value
-    sum_squared_total = np.power(dependent_var, 2).sum()
-    sum_squared_residual = dependent_var.T @ (independent_vars.T @ beta_coefficients)
-    sum_squared_error = sum_squared_total - sum_squared_residual
-    mean_squared_residual = sum_squared_residual / independent_vars.shape[0]
-    mean_squared_error = sum_squared_error / (dependent_var.size - independent_vars.shape[0] - 1)
+    sum_squared_total = np.var(dependent_var) * dependent_var.size
+    sum_squared_error = np.square(dependent_var 
+                                  - independent_vars.T @ coefficients).sum()
+    sum_squared_residual = sum_squared_total - sum_squared_error
+    
+    mean_squared_residual = sum_squared_residual / n_groups
+    mean_squared_error = sum_squared_error / deg_of_freedom
+    
     f_statistic = mean_squared_residual / mean_squared_error
     f_p_value = sp.f.sf(f_statistic, n_groups, deg_of_freedom)
 
-    # R-squared
+    # R-Squared
     r_squared = sum_squared_residual / sum_squared_total
-    r_squared_adjust = 1 - mean_squared_error * (dependent_var.size - 1) / sum_squared_total
+    r_squared_adjust = (1 - mean_squared_error 
+                        * (dependent_var.size - 1) / sum_squared_total)
 
-    # T-tests
+    # T-Tests
     estimator = np.linalg.inv(independent_vars @ independent_vars.T)
     estimator *= mean_squared_error
-    output_pstats = list()
+    standard_errors = np.sqrt(np.diag(estimator))
 
-    # Compute the standard errors
+    # Use 2-tailed tests
+    t_value = coefficients / standard_errors
+    t_p_value = sp.t.sf(np.abs(t_value), deg_of_freedom) * 2
+    coefficient_statistics = list(zip(t_value, t_p_value))
 
-    for coeff, standard_error in zip(beta_coefficients, np.diag(estimator)):
-        t_value = coeff / np.sqrt(standard_error)
-        p_value = sp.t.sf(np.abs(t_value), deg_of_freedom) * 2
-        output_pstats.append((t_value, p_value))
+    # 95th Percentile confidence intervals
+    scalar = sp.t.isf(0.025, deg_of_freedom)
+    confidence_interval = np.array([coefficients - scalar * standard_errors,
+                                    coefficients + scalar * standard_errors])
 
+    statistics = {
+        'DF': (n_groups, deg_of_freedom),
+        'F_value': f_statistic, 'P_value': f_p_value,
+        'Coefficient T-Tests': coefficient_statistics, 
+        'RSq': r_squared, 'RSq_adj': r_squared_adjust, 
+        '95th CI': confidence_interval}
 
-    # Pack Output
-    output = {'DF': (n_groups, deg_of_freedom),
-              'F_Value': f_statistic, 'FPvalue': f_p_value,
-              'Coeff': output_pstats, 'RSq': r_squared,
-              'RSq_adj': r_squared_adjust, 'Scalar': sp.t.isf(0.025, deg_of_freedom),
-              'estimator': estimator}
-
-    return output
-
-
-def _standard_errors(output_dict, indep_mean, indep_stds, dep_std):
-    """Computes the standard errors and t/p_values for intercept
-
-    Args:
-        output_dict: output dictionary from linear regression
-        indep_mean:  means of independent variables
-        indep_stds:  standard deviations of independent variables
-        dep_std:  standard deviation of dependent variable
-
-    Returns:
-        updated dictionary with standard errors and statistics for intercept
-
-    Notes:
-        This is a piecemeal approach, refactor this to go into the above function.
-    """
-    total_size = np.sum(output_dict['DF']) + 1
-    estimator = output_dict['estimator']
-    temp_array = np.zeros((estimator.shape[0] + 1, estimator.shape[1] + 1))
-    temp_array[0, 0] = 1.0 / total_size
-    temp_array[1:, 1:] = estimator
-
-    # Correction matrices
-    scale = np.diag(dep_std / np.concatenate(([1], indep_stds)))
-    shift = np.eye(temp_array.shape[0])
-    shift[1:, 0] = -indep_mean
-
-    estimator = scale @ temp_array @ scale
-    standard_error = np.sqrt(np.diag(shift.T @ estimator @ shift))
-
-    # Compute tolerance of intercept
-    t_value = output_dict['RegIntercept'] / standard_error[0]
-    p_value = sp.t.sf(np.abs(t_value), output_dict['DF'][1]) * 2
-
-    output_dict['SE'] = standard_error.tolist()
-    output_dict['RegInterceptErrors'] = (t_value, p_value)
-
-    # Use this to plot the confidence intervals of the output
-    output_dict['estimator'] = np.diag(estimator).tolist()
-    return output_dict
+    return statistics
 
 
 def linear_regression(independent_vars, dependent_var):
-    """Performs the linear regression via least squares.
+    """Performs a least-squares linear regression.
+    
+    This mean shifts and scales all variables to improve the
+    condition number of the matrix inversion
 
     Args:
         independent_vars: [n_vars x n_observations] array of independent variables
-        dependent_y:  dependent variable
+        dependent_var:  dependent variable [n_observations]
 
     Returns:
-        Slopes, intercept of linear equation
+        regression_dict: Dictionary with regression parameters and statistics
 
     Example:
-        result = linear_regression((independent1, independent2, ...),
+        result = linear_regression(np.vstack((independent1, independent2, ...)),
                                     dependent_y)
+                                
+    Note:
+        Missing data (marked by nan) is removed from all data.
     """
-    # Center the Dependent Variable
+    # Clean the data if necessary
+    valid_mask_dependent = ~np.isnan(dependent_var)
+    valid_mask_independent = ~np.isnan(independent_vars)
+    valid_mask = valid_mask_dependent & np.all(valid_mask_independent, axis=0)
+
+    independent_vars = independent_vars[:, valid_mask]
+    dependent_var = dependent_var[valid_mask]
+    
+    # Remove Mean and Standard Deviation
     dep_mean = dependent_var.mean()
     dep_std = dependent_var.std(ddof=1)
-    dependnt_var = dependent_var - dep_mean
-    dependnt_var *= (1. / dep_std)
+    
+    idep_mean = independent_vars.mean(axis=1)
+    idep_std = independent_vars.std(axis=1, ddof=1)
+    
+    # Centered - Scaled Variables
+    new_dependent = (dependent_var - dep_mean) / dep_std
+    new_independent = (independent_vars - idep_mean[:, None]) / idep_std[:, None]
+    
+    # "Beta" (Standardized) Coefficients    
+    coeffs = (np.linalg.pinv(new_independent.T) @ new_dependent[:, None]).squeeze()
+    coeffs = np.atleast_1d(coeffs)
 
-    # Center the Independent Variable
-    indep_mean = independent_vars.mean(axis=1)
-    indep_stds = independent_vars.std(axis=1, ddof=1)
-    independnt_vars = independent_vars - indep_mean[:, None]
-    independnt_vars /= indep_stds[:, None]
+    # Regression Coefficients
+    ratio = dep_std / idep_std
+    regression_coefficients = np.ones((coeffs.size + 1))
+    regression_coefficients[1:] = ratio * coeffs
+    regression_coefficients[0] = dep_mean - (regression_coefficients[1:] * idep_mean).sum()
+ 
+    output = {'Regression Coefficients': regression_coefficients, 
+              'Standard Coefficients': np.concatenate(([0], coeffs))}
+    
+    # Account for the intercept for statistics
+    independent_vars = np.vstack((np.ones_like(dependent_var), independent_vars))   
+    statistics = _lr_statistics(independent_vars, dependent_var, 
+                                regression_coefficients)
+    output.update(statistics)
 
-    # Compute the coefficients
-    beta_coefficients = (np.linalg.pinv(independnt_vars.T) @
-                         dependnt_var[:, None]).squeeze()
-    beta_coefficients = np.atleast_1d(beta_coefficients)
-
-    regression_coefficients = beta_coefficients * dep_std / indep_stds
-    regression_intercept = dep_mean - (regression_coefficients * indep_mean).sum()
-
-    # TODO: Refactor estimator in statistics
-    output = _linear_statistics(independnt_vars, dependnt_var, beta_coefficients)
-    output['Beta'] = beta_coefficients.tolist()
-    output['RegCoeff'] = regression_coefficients.tolist()
-    output['RegIntercept'] = regression_intercept.tolist()
-    output['Means'] = [0,] + indep_mean.tolist()
-
-    # Get the standard error to account for the issue when the coeff is zero
-    output = _standard_errors(output, indep_mean, indep_stds, dep_std)
-
-    return output
+    return output    
     
