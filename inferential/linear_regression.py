@@ -54,9 +54,6 @@ def _lr_statistics(independent_vars, dependent_var, coefficients):
 def linear_regression(independent_vars, dependent_var):
     """Performs a least-squares linear regression.
     
-    This mean shifts and scales all variables to improve the
-    condition number of the matrix inversion
-
     Args:
         independent_vars: [n_vars x n_observations] array of independent variables
         dependent_var:  dependent variable [n_observations]
