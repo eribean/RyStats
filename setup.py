@@ -16,7 +16,7 @@ if __name__ == '__main__':
                      'RyStats.dimensionality': convert_path('./dimensionality'),
                      'RyStats.plots': convert_path('./plots')
                      },
-        version="0.3.0",
+        version="0.4.0",
         license="MIT",
         description="Psychology Related Statistics in Python!",
         long_description=long_description.replace('<ins>','').replace('</ins>',''),
@@ -24,8 +24,8 @@ if __name__ == '__main__':
         author='Ryan C. Sanchez',
         author_email='ryan.sanchez@gofactr.com',
         url = 'https://github.com/eribean/RyStats',
-        keywords = ['Psychology', 'Psychometrics', 'FactorAnalysis', 'Data Science', 
-                    'Factor Analysis', 'Regression', 'Statistics'],
+        keywords = ['Psychology', 'Psychometrics', 'Factor Analysis', 'Data Science', 
+                    'Logistic Regression', 'Linear Regression', 'Mediation', 'Statistics'],
         install_requires = ['numpy', 'scipy', 'bokeh', 'ipython'],
         classifiers = [
             'Development Status :: 3 - Alpha',
