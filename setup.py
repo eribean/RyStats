@@ -16,7 +16,7 @@ if __name__ == '__main__':
                      'RyStats.dimensionality': convert_path('./dimensionality'),
                      'RyStats.plots': convert_path('./plots')
                      },
-        version="0.4.0",
+        version="0.4.1",
         license="MIT",
         description="Psychology Related Statistics in Python!",
         long_description=long_description.replace('<ins>','').replace('</ins>',''),
