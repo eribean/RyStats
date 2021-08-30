@@ -1,4 +1,3 @@
-import warnings
 import numpy as np
 import scipy.stats as sp
 from scipy.special import expit
@@ -34,16 +33,17 @@ def _logr_statistics(independent_vars, regression_coefficients):
     scalar = sp.norm.isf(0.025)
     confidence_intervals = np.array([regression_coefficients - scalar * standard_error,
                                      regression_coefficients + scalar * standard_error])
+    confidence_intervals = np.exp(confidence_intervals[:, 1:])
 
     output = {'Standard Errors': standard_error,
               'Coefficient Z-Tests': coefficient_tests,
               'Odds Ratio': odds_ratio,
-              'Odds Ratio 95th CI': np.exp(confidence_intervals[:, 1:])}
+              'Odds Ratio 95th CI': confidence_intervals}
 
     return output
 
 
-def _min_func(params, independent_var, dependent_var):
+def _min_func(params, independent_var, dependent_var, true_mask):
     """Minimum function for logistic regression."""
     intercept, slopes = params[0], params[1:]
     kernel = slopes[None, :] @ independent_var + intercept
@@ -51,15 +51,13 @@ def _min_func(params, independent_var, dependent_var):
     probability_one = expit(kernel).squeeze()
     probability_zero = 1. - probability_one
     
-    mask = dependent_var == 1
-
     # Return negative since this is going into a minimization function
-    return (np.sum(np.log(probability_one[mask] + SMALL)) +
-            np.sum(np.log(probability_zero[~mask] + SMALL))) * -1
+    return (np.sum(np.log(probability_one[true_mask] + SMALL)) +
+            np.sum(np.log(probability_zero[~true_mask] + SMALL))) * -1
 
 
 def logistic_regression(independent_vars, dependent_var):
-    """Computes logistic regression.
+    """Computes a logistic regression.
 
     Args:
         independent_vars: [n_vars x n_observations], array of independent variables
@@ -82,7 +80,7 @@ def logistic_regression(independent_vars, dependent_var):
     dependent_var = dependent_var[valid_mask]
 
     # Make sure dependent_y is coded as 0, 1
-    if((dependent_var.min() != 0) | dependent_var.max() != 1 |
+    if((dependent_var.min() != 0) or dependent_var.max() != 1 or
        (np.unique(dependent_var).size != 2)):
         raise AssertionError("Dependent Variable must be binary, (0 or 1)!")
     
@@ -94,13 +92,15 @@ def logistic_regression(independent_vars, dependent_var):
 
     # Perform the minimization
     x0 = np.ones(independent_vars.shape[0] + 1)
-    results = minimize(_min_func, x0, args=(normalized_xs, dependent_var),
+    true_mask = dependent_var == 1
+    results = minimize(_min_func, x0, args=(normalized_xs, dependent_var, true_mask),
                        method='SLSQP')
 
     # Convert back to un-normalized valuess
     regression_coefficients = np.zeros((independent_vars.shape[0] + 1))
     regression_coefficients[1:] = results.x[1:] / independent_stds
-    regression_coefficients[0] = results.x[0] - (regression_coefficients[1:] * independent_means).sum()
+    regression_coefficients[0] = results.x[0] - (regression_coefficients[1:] 
+                                                 * independent_means).sum()
     
     # Account for intercept
     independent_vars = np.vstack((np.ones_like(independent_vars[0]), 
@@ -110,7 +110,7 @@ def logistic_regression(independent_vars, dependent_var):
     output = {'Regression Coefficients': regression_coefficients}
     statistics = _logr_statistics(independent_vars, regression_coefficients)
     output.update(statistics)
-
+    
     # Deviance
     output['Residual Deviance'] = (dependent_var.size - independent_vars.shape[0], 
                                    2 * results.fun)
@@ -121,4 +121,5 @@ def logistic_regression(independent_vars, dependent_var):
     ratio = n0 / n1
     output['Null Deviance'] = (dependent_var.size - 1,
                                2 * (n1 * np.log1p(ratio) + n0 * np.log1p(1. / ratio)))
+
     return output
