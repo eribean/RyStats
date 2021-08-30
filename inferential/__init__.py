@@ -5,3 +5,4 @@ from .twoway_anova import *
 from .linear_regression import *
 from .logistic_regression import *
 from .simple_mediation import *
+from .correlation import *
