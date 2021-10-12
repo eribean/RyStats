@@ -24,7 +24,7 @@ def reverse_score(dataset, mask, max_val=5, invalid_response=None):
     new_data[mask] = max_val + 1 - new_data[mask]
     
     # If there is an invalid response reset it
-    if invalid_response:
+    if invalid_response is not None:
         new_data[dataset == invalid_response] = invalid_response
 
     return new_data
