@@ -21,7 +21,7 @@ def cronbach_alpha(data, invalid_response=None):
 
     valid_mask = True
     if invalid_response is not None:
-        valid_mask = data != INVALID_RESPONSE
+        valid_mask = data != invalid_response
     
     item_variance = np.var(data, axis=1, ddof=1, where=valid_mask).sum()
     people_variance = (n_items * n_items
