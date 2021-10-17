@@ -8,15 +8,17 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 if __name__ == '__main__':
     setup(
         name="RyStats", 
-        packages=['RyStats.inferential', 'RyStats.factoranalysis', 
-                  'RyStats.dimensionality', 'RyStats.common', 'RyStats.plots'],
+        packages=['RyStats.inferential', 'RyStats.factoranalysis',
+                  'RyStats.survey', 'RyStats.dimensionality', 
+                  'RyStats.common', 'RyStats.plots'],
         package_dir={'RyStats.common': convert_path('./common'),
                      'RyStats.inferential': convert_path('./inferential'),
                      'RyStats.factoranalysis': convert_path('./factoranalysis'),
+                     'RyStats.survey': convert_path('./survey'),
                      'RyStats.dimensionality': convert_path('./dimensionality'),
                      'RyStats.plots': convert_path('./plots')
                      },
-        version="0.4.1",
+        version="0.5.0",
         license="MIT",
         description="Psychology Related Statistics in Python!",
         long_description=long_description.replace('<ins>','').replace('</ins>',''),

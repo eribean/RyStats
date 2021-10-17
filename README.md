@@ -5,11 +5,12 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/RyStats?color=darkgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-
 # RyStats
+
 A collection of statistical packages writtten in python.
 
 ## Factor Analysis
+
 Several factor analysis routines are implemented including:
 
 1. Principal Components Analysis
@@ -18,51 +19,56 @@ Several factor analysis routines are implemented including:
 4. Minimum Rank
 
 ### Rotation
+
 1. Orthogonal / Oblique
 2. Procrustes
 
 ### Dimensionality Assessment
+
  1. Parallel Analysis
  2. MAP (Minimum Average Partial)
 
-### Misc.
+### Miscellaneous
+
 1. Polychoric Correlations
 
 # Plotting Tools
+
 Plotting Tools require Bokeh and are made to be used within a Jupyter Notebook
 
 ### Plot Functions
+
 1. correlation_image: creates a heatmap of a correlation matrix
 2. loading_image: creates a heatmap of a loadings matrix
 3. scree_plot: plots the eigenvalues for dimensionality assessment
 4. loading_table: creates a table that displays the loadings matrix
 
 # Dependencies
+
 1. Numpy
 2. Scipy
 3. Bokeh (for plotting)
 
 # Installation
+
 Via pip
-```
+
+```csh
 pip install RyStats --upgrade
 ```
 
 From Source
-```
+
+```csh
 pip install . -t $PYTHONPATH --upgrade
 ```
 
 ## Unittests
 
 **Pytest** with coverage
-```
-pytest --cov=RyStats --cov-report term
-```
 
-**Nosetest** with coverage
-```
-nosetests --with-coverage --cover-package=RyStats
+```csh
+pytest --cov=RyStats --cov-report term
 ```
 
 ## Contact
