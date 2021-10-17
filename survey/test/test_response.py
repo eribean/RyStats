@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from RyStats.survey import reverse_score, cronbach_alpha
+from RyStats.survey import reverse_score, cronbach_alpha, mcdonald_omega
 
 
 INVALID_RESPONSE = -99
@@ -70,6 +70,41 @@ class TestSurvey(unittest.TestCase):
         result = cronbach_alpha(dataset, invalid_response=INVALID_RESPONSE)
         self.assertAlmostEqual(result, .1184, places=4)
 
+    def test_mcdonald_omega(self):
+        """Testing mcdonalds omega."""
+        rng = np.random.default_rng(238561287623161322)
+
+        loadings = rng.uniform(.1, 25, 10)
+        uniqueness = rng.uniform(.1, 25, 10)
+
+        expected = loadings.sum()**2 / (loadings.sum()**2 + uniqueness.sum())
+
+        result = mcdonald_omega(loadings, uniqueness)
+        self.assertEqual(expected, result)
+
+        # Should handle a single dimension
+        result = mcdonald_omega(loadings.reshape(1, -1), uniqueness[:, None])
+        self.assertEqual(expected, result)
+
+    def test_mcdonald_omega2(self):
+        """Testing mcdonalds omega fails."""
+        loadings = np.ones((10, 2))
+        uniqueness = np.ones(10)
+
+        with self.assertRaises(AssertionError):
+            mcdonald_omega(loadings, uniqueness)
+
+        loadings = np.ones(10)
+        uniqueness = np.ones((10, 2))
+
+        with self.assertRaises(AssertionError):
+            mcdonald_omega(loadings, uniqueness)
+
+        loadings = np.ones((10, 2))
+        uniqueness = np.ones((10, 2))
+
+        with self.assertRaises(AssertionError):
+            mcdonald_omega(loadings, uniqueness)
 
 if __name__ == "__main__":
     unittest.main()
