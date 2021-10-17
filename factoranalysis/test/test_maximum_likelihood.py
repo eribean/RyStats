@@ -69,22 +69,5 @@ class TestMaximumLikelihood(unittest.TestCase):
         np.testing.assert_allclose(variance_modern, variance_classic, rtol=1e-4)
         np.testing.assert_allclose(variance_modern, variance_classic2, rtol=1e-4)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-       
-
-
-
 if __name__ == "__main__":
     unittest.main()
