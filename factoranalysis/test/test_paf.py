@@ -5,6 +5,7 @@ import numpy as np
 from RyStats.factoranalysis import principal_components_analysis as pca
 from RyStats.factoranalysis import principal_axis_factor as paf
 
+
 class TestPrincipalAxis(unittest.TestCase):
     """Test fixture for principal components."""
 
@@ -27,7 +28,6 @@ class TestPrincipalAxis(unittest.TestCase):
         np.testing.assert_allclose(loadings, loadings_paf, rtol=1e-4)
         np.testing.assert_allclose(eigenvalues, eigenvalues2, rtol=1e-4)
         np.testing.assert_allclose(unique_var, variance, rtol=1e-4)
-
 
 if __name__ == "__main__":
     unittest.main()

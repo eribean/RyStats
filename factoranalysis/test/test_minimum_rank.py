@@ -66,10 +66,6 @@ class TestMinimumRank(unittest.TestCase):
                                              n_factors)
             np.testing.assert_allclose(result['jac'], derivative_calc[1], atol=1e-5)
 
-
-
-
-
     def test_minimum_zero_eigenvalue(self):
         """Testing Forced Semi-Positive Definite."""
         rng = np.random.default_rng(12473)
