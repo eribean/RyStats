@@ -40,7 +40,7 @@ class TestPolyserialCorrelation(unittest.TestCase):
                                                        [rho, 1]], size=10000)
         ordinal = np.digitize(continuous[:, 1], thresholds)
 
-        result = polyserial_correlation(continuous[:, 0], ordinal)
+        result = polyserial_correlation(continuous[:, 0], ordinal)['Correlation']
         point_polyserial = np.corrcoef(continuous[:, 0], ordinal)[0, 1]
 
         self.assertAlmostEqual(result, rho, delta=.01)
@@ -59,7 +59,7 @@ class TestPolyserialCorrelation(unittest.TestCase):
                                                        [rho, 1]], size=10000)
         ordinal = np.digitize(continuous[:, 1], thresholds)
 
-        result = polyserial_correlation(continuous[:, 0], ordinal)
+        result = polyserial_correlation(continuous[:, 0], ordinal)['Correlation']
         point_polyserial = np.corrcoef(continuous[:, 0], ordinal)[0, 1]
 
         self.assertAlmostEqual(result, rho, delta=.015)

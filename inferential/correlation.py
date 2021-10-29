@@ -47,7 +47,7 @@ def polyserial_correlation(continuous, ordinal):
         ordinal: Ordinal Measurement
         
     Returns:
-        polyserial_correlation: correlation value
+        dict: Dictionary of correlation,likelilhood ratio test (chi-squared), and p value
         
     Notes:
         User must handle missing data
