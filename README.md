@@ -7,7 +7,8 @@
 
 # RyStats
 
-A collection of statistical packages writtten in python.
+A collection of statistical functions written in python. Many of these functions can be accessed
+without downloading any software at [GoFactr](https://gofactr.com)
 
 ## Factor Analysis
 
@@ -17,22 +18,39 @@ Several factor analysis routines are implemented including:
 2. Principal Axis Factoring
 3. Maximum Likelihood
 4. Minimum Rank
+5. Minimum Residual
 
-### Rotation
+## Rotation
 
 1. Orthogonal / Oblique
 2. Procrustes
 
-### Dimensionality Assessment
+## Dimensionality Assessment
 
  1. Parallel Analysis
  2. MAP (Minimum Average Partial)
 
-### Miscellaneous
+## Correlations
 
 1. Polychoric Correlations
+2. Polyserial Correlations
+3. Biserial Correlations
 
-# Plotting Tools
+## Inferential Analysis
+
+1. Linear Regression
+2. Logistic Regression
+3. One/Two-way Anova
+4. T-Tests
+5. Mediation
+
+## Survey Utilities
+
+1. Reverse Scoring
+2. Cronbach's Alpha
+3. McDonald's Omega
+
+## Plotting Tools
 
 Plotting Tools require Bokeh and are made to be used within a Jupyter Notebook
 
